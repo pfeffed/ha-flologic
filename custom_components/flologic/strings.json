@@ -1,0 +1,140 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to FloLogic",
+        "description": "Sign in with your FloLogic account. Every valve on the account is added, so you only need one entry per account.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        },
+        "data_description": {
+          "email": "The email address you use in the FloLogic app.",
+          "password": "Your FloLogic password. It is stored locally and sent only to FloLogic."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate FloLogic",
+        "description": "FloLogic rejected the saved credentials for {email}. Enter the password again.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach FloLogic. Check your internet connection and try again.",
+      "invalid_auth": "FloLogic rejected that email and password.",
+      "unknown": "Unexpected error talking to FloLogic."
+    },
+    "abort": {
+      "already_configured": "This FloLogic account is already set up.",
+      "reauth_successful": "FloLogic re-authenticated successfully."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "FloLogic options",
+        "description": "Updates normally arrive by push within a second. Polling is only a backstop, so a long interval is fine.",
+        "data": {
+          "poll_interval": "Polling interval"
+        },
+        "data_description": {
+          "poll_interval": "Seconds between fallback polls. Shorter intervals risk rate limiting and gain nothing while pushes are healthy."
+        }
+      }
+    }
+  },
+  "entity": {
+    "valve": {},
+    "select": {
+      "valve_mode": {
+        "name": "Mode",
+        "state": {
+          "home": "Home",
+          "away": "Away",
+          "bypass": "Bypass",
+          "shutoff": "Shutoff",
+          "disabled": "Disabled"
+        }
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "unknown": "Unknown",
+          "home": "Home",
+          "away": "Away",
+          "bypass": "Bypass",
+          "shutoff": "Shutoff",
+          "disabled": "Disabled",
+          "flow_time_exceeded": "Flow time exceeded",
+          "external_leak": "External leak",
+          "auto_away": "Auto away",
+          "external_bypass": "External bypass",
+          "delay_away": "Delay away",
+          "external_away": "External away",
+          "override": "Override",
+          "ac_lost": "Ac lost",
+          "change_battery": "Change battery",
+          "error": "Error",
+          "sensor_leak": "Sensor leak",
+          "system_down": "System down",
+          "valve_failure": "Valve failure",
+          "communication_error": "Communication error",
+          "external_home": "External home",
+          "external_emergency_shutdown": "External emergency shutdown",
+          "updating": "Updating",
+          "external_override": "External override",
+          "low_temp_alert": "Low temp alert",
+          "low_temp_shutoff": "Low temp shutoff",
+          "humidity_sensor_shutoff": "Humidity sensor shutoff",
+          "low_temp_sensor_shutoff": "Low temp sensor shutoff",
+          "unknown_fault": "Unknown fault"
+        }
+      },
+      "current_flow": {
+        "name": "Current flow"
+      },
+      "shutoff_countdown": {
+        "name": "Shutoff countdown"
+      },
+      "flow_elapsed": {
+        "name": "Flow elapsed"
+      },
+      "last_seen": {
+        "name": "Last seen"
+      },
+      "flow_sensitivity": {
+        "name": "Flow sensitivity"
+      },
+      "current_flow_limit": {
+        "name": "Active flow limit"
+      }
+    },
+    "binary_sensor": {
+      "water_off": {
+        "name": "Water off"
+      },
+      "warning": {
+        "name": "Warning"
+      },
+      "critical_fault": {
+        "name": "Critical fault"
+      },
+      "water_flowing": {
+        "name": "Water flowing",
+        "state": {
+          "off": "No flow",
+          "on": "Flowing"
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "FloLogic did not accept the command: {error}"
+    }
+  }
+}
