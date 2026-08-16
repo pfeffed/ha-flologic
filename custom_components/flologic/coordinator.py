@@ -21,6 +21,7 @@ from pyflologic import (
     FloLogicAuthError,
     FloLogicClient,
     FloLogicError,
+    Notification,
     Valve,
 )
 
@@ -56,6 +57,10 @@ class FloLogicCoordinator(DataUpdateCoordinator[Account]):
             update_interval=timedelta(seconds=poll_interval),
         )
         self.client = client
+        # Keyed by valve because the rows themselves carry no valve ID: the
+        # cloud scopes them to whatever was asked for, so they have to be
+        # fetched one valve at a time to stay attributable.
+        self.notifications: dict[str, list[Notification]] = {}
 
     async def _async_setup(self) -> None:
         """Connect and load the account once, before the first refresh."""
@@ -68,14 +73,35 @@ class FloLogicCoordinator(DataUpdateCoordinator[Account]):
         self.client.add_listener(self._handle_push)
 
     async def _async_update_data(self) -> Account:
-        """Re-read the account."""
+        """Re-read the account, and the notification log alongside it."""
         try:
             await self.client.async_refresh()
         except FloLogicAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except FloLogicError as err:
             raise UpdateFailed(str(err)) from err
+
+        await self._async_update_notifications()
         return self.client.account
+
+    async def _async_update_notifications(self) -> None:
+        """Refresh each valve's notification log, best effort.
+
+        A failure here must not fail the update: valve state is what the
+        safety-relevant entities run on, and losing the log is a much smaller
+        problem than every entity going unavailable.
+        """
+        for valve_id in self.client.account.controllable_valves:
+            try:
+                rows = await self.client.async_fetch_notifications([valve_id])
+            except FloLogicError as err:
+                _LOGGER.debug("Notification fetch failed for %s: %s", valve_id, err)
+                continue
+            self.notifications[valve_id] = sorted(
+                rows,
+                key=lambda row: (row.created_at is not None, row.created_at),
+                reverse=True,
+            )
 
     @callback
     def _handle_push(self, account: Account) -> None:

@@ -1,0 +1,168 @@
+"""Writable valve settings.
+
+Only the settings FloLogic stores as a plain positive number are here. The
+ones it toggles by negating -- Auto Away, Delay Away, Winter Mode and the
+temperature thresholds -- need a switch and a value together to be represented
+honestly, and are deliberately left out until that pair exists rather than
+exposed as a number that silently means something else when negative.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable, Coroutine
+from dataclasses import dataclass
+from typing import Any
+
+from homeassistant.components.number import (
+    NumberEntity,
+    NumberEntityDescription,
+    NumberMode,
+)
+from homeassistant.const import EntityCategory, UnitOfTime
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from pyflologic import FloLogicClient, FloLogicError, Valve
+
+from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
+from .entity import FloLogicValveEntity
+from .sensor import OUNCES_PER_MINUTE
+
+type Setter = Callable[[FloLogicClient, str, float], Coroutine[Any, Any, None]]
+
+
+@dataclass(frozen=True, kw_only=True)
+class FloLogicNumberDescription(NumberEntityDescription):
+    """Describes a writable FloLogic setting."""
+
+    value_fn: Callable[[Valve], float | None]
+    set_fn: Setter
+
+
+NUMBERS: tuple[FloLogicNumberDescription, ...] = (
+    FloLogicNumberDescription(
+        key="home_limit",
+        translation_key="home_limit",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        native_min_value=1,
+        native_max_value=1440,
+        native_step=1,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.home_limit_minutes,
+        set_fn=lambda client, valve_id, value: client.async_update_settings(
+            valve_id, home_limit_minutes=value
+        ),
+    ),
+    FloLogicNumberDescription(
+        key="away_limit",
+        translation_key="away_limit",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        # Sub-minute limits are normal here: a real valve runs 0.5, which the
+        # app displays as "6 seconds"... at 0.1. Minutes is the wire unit.
+        native_min_value=0.1,
+        native_max_value=1440,
+        native_step=0.1,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.away_limit_minutes,
+        set_fn=lambda client, valve_id, value: client.async_update_settings(
+            valve_id, away_limit_minutes=value
+        ),
+    ),
+    FloLogicNumberDescription(
+        key="bypass_time",
+        translation_key="bypass_time",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        native_min_value=1,
+        native_max_value=1440,
+        native_step=1,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.bypass_minutes,
+        set_fn=lambda client, valve_id, value: client.async_update_settings(
+            valve_id, bypass_minutes=value
+        ),
+    ),
+    FloLogicNumberDescription(
+        key="flow_sensitivity",
+        translation_key="flow_sensitivity",
+        native_unit_of_measurement=OUNCES_PER_MINUTE,
+        native_min_value=0.1,
+        native_max_value=200,
+        native_step=0.1,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.flow_sensitivity_oz_per_min,
+        set_fn=lambda client, valve_id, value: client.async_update_settings(
+            valve_id, flow_sensitivity_oz_per_min=value
+        ),
+    ),
+    FloLogicNumberDescription(
+        key="pre_alert",
+        translation_key="pre_alert",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        native_min_value=0,
+        native_max_value=60,
+        native_step=1,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.pre_alert_minutes,
+        set_fn=lambda client, valve_id, value: client.async_update_settings(
+            valve_id, pre_alert_minutes=value
+        ),
+    ),
+)
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: FloLogicConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
+) -> None:
+    """Set up settings numbers for every controllable valve."""
+    del hass
+    coordinator = entry.runtime_data
+    async_add_entities(
+        FloLogicNumber(coordinator, valve, description)
+        for valve in coordinator.data.controllable_valves.values()
+        for description in NUMBERS
+    )
+
+
+class FloLogicNumber(FloLogicValveEntity, NumberEntity):
+    """One writable valve setting."""
+
+    entity_description: FloLogicNumberDescription
+
+    def __init__(
+        self,
+        coordinator: FloLogicCoordinator,
+        valve: Valve,
+        description: FloLogicNumberDescription,
+    ) -> None:
+        """Initialize the number."""
+        super().__init__(coordinator, valve, description.key)
+        self.entity_description = description
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current setting."""
+        valve = self.valve
+        if valve is None:
+            return None
+        return self.entity_description.value_fn(valve)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Write the setting back to FloLogic."""
+        try:
+            await self.entity_description.set_fn(
+                self.coordinator.client, self._valve_id, value
+            )
+        except FloLogicError as err:
+            raise HomeAssistantError(
+                translation_domain=self.coordinator.config_entry.domain,
+                translation_key="command_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        self.coordinator.async_set_updated_data(self.coordinator.client.account)

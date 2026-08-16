@@ -130,6 +130,37 @@
           "on": "Flowing"
         }
       }
+    },
+    "number": {
+      "home_limit": {
+        "name": "Home flow limit"
+      },
+      "away_limit": {
+        "name": "Away flow limit"
+      },
+      "bypass_time": {
+        "name": "Bypass duration"
+      },
+      "flow_sensitivity": {
+        "name": "Flow sensitivity"
+      },
+      "pre_alert": {
+        "name": "Pre-alert notice"
+      }
+    },
+    "event": {
+      "notification": {
+        "name": "Notification",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "water_shutoff": "Water shutoff",
+              "mode_change": "Mode change",
+              "notice": "Notice"
+            }
+          }
+        }
+      }
     }
   },
   "exceptions": {

@@ -9,7 +9,7 @@ import pytest
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
-from pyflologic import Account, User, Valve
+from pyflologic import Account, Notification, User, Valve
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.flologic.const import (
@@ -91,10 +91,13 @@ def config_entry() -> MockConfigEntry:
         unique_id="4297",
         data={
             CONF_EMAIL: "owner@example.com",
-            CONF_PASSWORD: "secret",
+            # Distinctive values: a redaction test that greps the serialized
+            # document needs secrets that cannot appear as a substring of a
+            # key name, or it passes for the wrong reason.
+            CONF_PASSWORD: "pw-MUST-NOT-LEAK",
             CONF_DEVICE_NAME: "Home Assistant",
             CONF_DEVICE_CODE: "AND-test",
-            CONF_DEVICE_TOKEN: "token",
+            CONF_DEVICE_TOKEN: "tok-MUST-NOT-LEAK",
         },
     )
 
@@ -111,7 +114,10 @@ def mock_client() -> Generator[MagicMock]:
         client.async_disconnect = AsyncMock()
         client.async_refresh = AsyncMock()
         client.async_set_mode = AsyncMock()
+        client.async_update_settings = AsyncMock()
+        client.async_fetch_notifications = AsyncMock(return_value=[])
         client.add_listener = MagicMock(return_value=lambda: None)
+        client.connected = True
         client.account = account
         client.user = account.user
         client.valves = dict(account.valves)
@@ -123,3 +129,18 @@ async def setup_integration(hass: HomeAssistant, entry: ConfigEntry) -> None:
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
+
+
+def make_notification(
+    notification_id: int, text: str, created: str = "2026-08-16T18:33:58.147"
+) -> Notification:
+    """Build a notification row shaped like a real one (no valveId)."""
+    return Notification(
+        {
+            "id": notification_id,
+            "created": created,
+            "title": "Mode Change",
+            "text": text,
+            "delivered": False,
+        }
+    )

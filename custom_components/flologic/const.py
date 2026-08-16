@@ -9,6 +9,8 @@ DOMAIN = "flologic"
 PLATFORMS: list[Platform] = [
     Platform.VALVE,
     Platform.BINARY_SENSOR,
+    Platform.EVENT,
+    Platform.NUMBER,
     Platform.SELECT,
     Platform.SENSOR,
 ]
