@@ -1,10 +1,13 @@
 """Writable valve settings.
 
-Only the settings FloLogic stores as a plain positive number are here. The
-ones it toggles by negating -- Auto Away, Delay Away, Winter Mode and the
-temperature thresholds -- need a switch and a value together to be represented
-honestly, and are deliberately left out until that pair exists rather than
-exposed as a number that silently means something else when negative.
+Two kinds live here. Plain settings are a single positive number on the wire.
+Sign-encoded ones -- Auto Away, Delay Away, Winter Mode and the temperature
+thresholds -- pack a switch into the sign, so each is a pair: the number here
+carries the magnitude and the matching switch carries the sign.
+
+The magnitude stays visible and writable while the setting is switched off,
+because FloLogic keeps it and the app shows it. Writing one does not turn the
+setting on.
 """
 
 from __future__ import annotations
@@ -14,15 +17,21 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.number import (
+    NumberDeviceClass,
     NumberEntity,
     NumberEntityDescription,
     NumberMode,
 )
-from homeassistant.const import EntityCategory, UnitOfTime
+from homeassistant.const import EntityCategory, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from pyflologic import FloLogicClient, FloLogicError, Valve
+from pyflologic import (
+    FloLogicClient,
+    FloLogicError,
+    ToggledSettingName,
+    Valve,
+)
 
 from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
 from .entity import FloLogicValveEntity
@@ -37,6 +46,15 @@ class FloLogicNumberDescription(NumberEntityDescription):
 
     value_fn: Callable[[Valve], float | None]
     set_fn: Setter
+
+
+def _toggled_setter(setting: ToggledSettingName) -> Setter:
+    """Return a setter that changes a sign-encoded setting's magnitude only."""
+
+    def _set(client: FloLogicClient, valve_id: str, value: float) -> Any:
+        return client.async_set_toggled_setting(valve_id, setting, value=value)
+
+    return _set
 
 
 NUMBERS: tuple[FloLogicNumberDescription, ...] = (
@@ -111,6 +129,68 @@ NUMBERS: tuple[FloLogicNumberDescription, ...] = (
         set_fn=lambda client, valve_id, value: client.async_update_settings(
             valve_id, pre_alert_minutes=value
         ),
+    ),
+    FloLogicNumberDescription(
+        key="auto_away_hours",
+        translation_key="auto_away_hours",
+        native_unit_of_measurement=UnitOfTime.HOURS,
+        native_min_value=1,
+        native_max_value=336,
+        native_step=1,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.auto_away.configured,
+        set_fn=_toggled_setter(ToggledSettingName.AUTO_AWAY),
+    ),
+    FloLogicNumberDescription(
+        key="delay_away_minutes",
+        translation_key="delay_away_minutes",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        native_min_value=1,
+        native_max_value=1440,
+        native_step=1,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.delay_away.configured,
+        set_fn=_toggled_setter(ToggledSettingName.DELAY_AWAY),
+    ),
+    FloLogicNumberDescription(
+        key="winter_flow_sensitivity",
+        translation_key="winter_flow_sensitivity",
+        native_unit_of_measurement=OUNCES_PER_MINUTE,
+        native_min_value=0.1,
+        native_max_value=200,
+        native_step=0.1,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.winter_flow_sensitivity.configured,
+        set_fn=_toggled_setter(ToggledSettingName.WINTER_FLOW_SENSITIVITY),
+    ),
+    FloLogicNumberDescription(
+        key="low_temp_alert_f",
+        translation_key="low_temp_alert_f",
+        device_class=NumberDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
+        native_min_value=1,
+        native_max_value=100,
+        native_step=1,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.low_temp_alert.configured,
+        set_fn=_toggled_setter(ToggledSettingName.LOW_TEMP_ALERT),
+    ),
+    FloLogicNumberDescription(
+        key="low_temp_shutoff_f",
+        translation_key="low_temp_shutoff_f",
+        device_class=NumberDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
+        native_min_value=1,
+        native_max_value=100,
+        native_step=1,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.low_temp_shutoff.configured,
+        set_fn=_toggled_setter(ToggledSettingName.LOW_TEMP_SHUTOFF),
     ),
 )
 

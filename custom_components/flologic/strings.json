@@ -146,6 +146,21 @@
       },
       "pre_alert": {
         "name": "Pre-alert notice"
+      },
+      "auto_away_hours": {
+        "name": "Auto Away delay"
+      },
+      "delay_away_minutes": {
+        "name": "Delay Away duration"
+      },
+      "winter_flow_sensitivity": {
+        "name": "Winter flow sensitivity"
+      },
+      "low_temp_alert_f": {
+        "name": "Low temperature alert"
+      },
+      "low_temp_shutoff_f": {
+        "name": "Low temperature shutoff"
       }
     },
     "event": {
@@ -160,6 +175,23 @@
             }
           }
         }
+      }
+    },
+    "switch": {
+      "auto_away": {
+        "name": "Auto Away"
+      },
+      "delay_away": {
+        "name": "Delay Away"
+      },
+      "winter_mode": {
+        "name": "Winter mode"
+      },
+      "low_temp_alert": {
+        "name": "Low temperature alert"
+      },
+      "low_temp_shutoff": {
+        "name": "Low temperature shutoff"
       }
     }
   },

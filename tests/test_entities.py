@@ -10,7 +10,13 @@ from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_ON, STATE_UNAVA
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
-from pyflologic import ControlMode, FloLogicCommandError, ValveMode
+from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
+from pyflologic import (
+    ControlMode,
+    FloLogicCommandError,
+    ToggledSettingName,
+    ValveMode,
+)
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from .conftest import make_account, make_valve, setup_integration
@@ -253,3 +259,93 @@ class TestRegistry:
         entry = registry.async_get(VALVE_ENTITY)
         assert entry is not None
         assert entry.unique_id == "hw-106193_valve"
+
+
+class TestToggledSettings:
+    """The switch-and-number pairs for sign-encoded settings."""
+
+    async def test_the_switch_reflects_the_sign(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        # The fixture valve carries autoAwayTime 96: positive, so switched on.
+        await setup_integration(hass, config_entry)
+        state = hass.states.get("switch.34_sample_road_auto_away")
+        assert state.state == STATE_ON
+        assert state.attributes["configured_value"] == 96.0
+
+    async def test_a_disabled_setting_keeps_its_value_visible(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """Off with 18 hours showing is exactly how the app renders it."""
+        await setup_integration(hass, config_entry)
+        await set_account(hass, config_entry, mock_client, make_valve(autoAwayTime=-18))
+
+        assert hass.states.get("switch.34_sample_road_auto_away").state == STATE_OFF
+        assert hass.states.get("number.34_sample_road_auto_away_delay").state == "18.0"
+
+    async def test_switching_off_preserves_the_magnitude(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        await setup_integration(hass, config_entry)
+        await hass.services.async_call(
+            "switch",
+            "turn_off",
+            {ATTR_ENTITY_ID: "switch.34_sample_road_auto_away"},
+            blocking=True,
+        )
+        mock_client.async_set_toggled_setting.assert_awaited_once_with(
+            "106193", ToggledSettingName.AUTO_AWAY, enabled=False
+        )
+
+    async def test_setting_the_value_does_not_touch_the_switch(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """Raising a threshold must not silently enable a disabled setting.
+
+        Run in US customary units so the number is entered in the same scale
+        FloLogic uses; Home Assistant converts for metric users, which is why
+        the same value expressed in Celsius would be out of range.
+        """
+        hass.config.units = US_CUSTOMARY_SYSTEM
+        await setup_integration(hass, config_entry)
+        await hass.services.async_call(
+            "number",
+            "set_value",
+            {
+                ATTR_ENTITY_ID: "number.34_sample_road_low_temperature_shutoff",
+                "value": 40,
+            },
+            blocking=True,
+        )
+        mock_client.async_set_toggled_setting.assert_awaited_once_with(
+            "106193", ToggledSettingName.LOW_TEMP_SHUTOFF, value=40.0
+        )
+
+    async def test_a_temperature_threshold_converts_for_metric_users(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """FloLogic speaks Fahrenheit; the entity speaks the user's units."""
+        hass.config.units = METRIC_SYSTEM
+        await setup_integration(hass, config_entry)
+        entity = "number.34_sample_road_low_temperature_shutoff"
+        # 36 F is the fixture's threshold, which is a little over 2 C.
+        assert float(hass.states.get(entity).state) == pytest.approx(2.2, abs=0.1)
+
+        await hass.services.async_call(
+            "number", "set_value", {ATTR_ENTITY_ID: entity, "value": 5}, blocking=True
+        )
+        _, kwargs = mock_client.async_set_toggled_setting.call_args
+        assert kwargs["value"] == pytest.approx(41.0, abs=0.1)
+
+    async def test_a_rejected_toggle_surfaces(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        await setup_integration(hass, config_entry)
+        mock_client.async_set_toggled_setting.side_effect = FloLogicCommandError("no")
+        with pytest.raises(HomeAssistantError, match="did not accept"):
+            await hass.services.async_call(
+                "switch",
+                "turn_on",
+                {ATTR_ENTITY_ID: "switch.34_sample_road_winter_mode"},
+                blocking=True,
+            )

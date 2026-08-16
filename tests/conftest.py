@@ -115,6 +115,7 @@ def mock_client() -> Generator[MagicMock]:
         client.async_refresh = AsyncMock()
         client.async_set_mode = AsyncMock()
         client.async_update_settings = AsyncMock()
+        client.async_set_toggled_setting = AsyncMock()
         client.async_fetch_notifications = AsyncMock(return_value=[])
         client.add_listener = MagicMock(return_value=lambda: None)
         client.connected = True
