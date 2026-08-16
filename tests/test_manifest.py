@@ -22,11 +22,30 @@ MANIFEST = json.loads((COMPONENT / "manifest.json").read_text())
 
 
 def test_the_pinned_library_version_is_the_one_being_tested() -> None:
-    """A pin behind the code under test ships a broken install."""
+    """A pin behind the code under test ships a broken install.
+
+    The requirement is a direct URL rather than a PyPI pin, because the
+    library is published as a GitHub release instead. The version still has to
+    match, and it appears twice in the URL -- tag and filename -- so both are
+    checked; a tag bumped without rebuilding the wheel would install the old
+    code from a convincing-looking URL.
+    """
     requirement = next(
         item for item in MANIFEST["requirements"] if item.startswith("pyflologic")
     )
-    assert requirement == f"pyflologic=={pyflologic.__version__}"
+    version = pyflologic.__version__
+    assert requirement.startswith("pyflologic @ https://"), requirement
+    assert f"/v{version}/" in requirement, requirement
+    assert f"pyflologic-{version}-" in requirement, requirement
+
+
+def test_the_requirement_url_is_a_wheel_from_a_release() -> None:
+    """A wheel needs no build step, which matters inside the HA container."""
+    requirement = next(
+        item for item in MANIFEST["requirements"] if item.startswith("pyflologic")
+    )
+    assert "/releases/download/" in requirement
+    assert requirement.endswith(".whl")
 
 
 def test_every_api_the_integration_uses_exists_in_the_library() -> None:

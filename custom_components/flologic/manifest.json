@@ -7,7 +7,11 @@
   "integration_type": "hub",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/pfeffed/ha-flologic/issues",
-  "loggers": ["pyflologic"],
-  "requirements": ["pyflologic==0.2.0"],
+  "loggers": [
+    "pyflologic"
+  ],
+  "requirements": [
+    "pyflologic @ https://github.com/pfeffed/pyflologic/releases/download/v0.2.0/pyflologic-0.2.0-py3-none-any.whl"
+  ],
   "version": "0.2.0"
 }

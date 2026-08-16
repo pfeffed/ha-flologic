@@ -71,9 +71,18 @@ the valve, not the plumbing.
 
 ## Install
 
-HACS → Custom repositories → `https://github.com/pfeffed/ha-flologic`,
-category Integration. Then **Settings → Devices & services → Add integration →
-FloLogic**, and sign in.
+1. **HACS → ⋮ → Custom repositories**, add
+   `https://github.com/pfeffed/ha-flologic` with category **Integration**.
+2. Find **FloLogic** in HACS, install it, and **restart Home Assistant**.
+3. **Settings → Devices & services → Add integration → FloLogic**, and sign in
+   with your FloLogic account.
+
+Every valve on the account is added, so one entry per account is enough even
+if your valves are at different addresses.
+
+`pyflologic` is not on PyPI; the manifest points at a wheel attached to a
+GitHub release, which Home Assistant installs on first setup. That needs
+outbound HTTPS to github.com at that moment, and nothing after.
 
 Your password is stored in Home Assistant's config entry and sent only to
 FloLogic. If it stops working, the integration prompts you to re-authenticate
