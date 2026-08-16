@@ -28,9 +28,28 @@ recognised and skipped.
 | `binary_sensor` — Warning / Critical fault | Grouped from the mode bitfield |
 | `binary_sensor` — Water flowing | See the caveat below |
 | `binary_sensor` — Connectivity | Stays available while the valve is offline |
+| `event` — Notification | FloLogic's own log: shutoffs, mode changes, notices |
 
-Diagnostics (signal strength, flow limits, flow sensitivity, elapsed flow) are
+Read-only diagnostics (signal strength, elapsed flow, active flow limit) are
 present but disabled by default.
+
+### Settings you can change
+
+| Entity | Notes |
+| --- | --- |
+| `number` — Home / Away flow limit | Minutes. Sub-minute values are normal: 0.5 is "30 seconds" |
+| `number` — Bypass duration, Flow sensitivity, Pre-alert notice | |
+| `switch` + `number` — Auto Away, Delay Away, Winter mode | A switch and its value, as in the app |
+| `switch` + `number` — Low temperature alert / shutoff | Shown in your units; FloLogic stores Fahrenheit |
+
+FloLogic disables these settings by *negating* the stored value rather than
+clearing it, so switching one off keeps the value it would use when switched
+back on — and changing a value does not switch anything on. That is why each
+is a pair rather than a single entity.
+
+**These are safety thresholds.** An automation that widens a flow limit or
+turns off a freeze shutoff has disabled part of your leak protection, silently.
+They are exposed because the app exposes them; treat them accordingly.
 
 ## Two caveats worth reading before you automate
 

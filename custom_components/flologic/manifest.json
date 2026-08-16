@@ -8,6 +8,6 @@
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/pfeffed/ha-flologic/issues",
   "loggers": ["pyflologic"],
-  "requirements": ["pyflologic==0.1.0"],
-  "version": "0.1.0"
+  "requirements": ["pyflologic==0.2.0"],
+  "version": "0.2.0"
 }
