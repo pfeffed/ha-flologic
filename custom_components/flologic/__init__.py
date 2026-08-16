@@ -11,6 +11,7 @@ from __future__ import annotations
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.device_registry import DeviceEntry
 from pyflologic import DEFAULT_POLL_INTERVAL, DeviceIdentity, FloLogicClient
 
 from .const import (
@@ -18,6 +19,7 @@ from .const import (
     CONF_DEVICE_NAME,
     CONF_DEVICE_TOKEN,
     CONF_POLL_INTERVAL,
+    DOMAIN,
     PLATFORMS,
 )
 from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
@@ -66,3 +68,25 @@ async def async_unload_entry(hass: HomeAssistant, entry: FloLogicConfigEntry) ->
 async def _async_reload_entry(hass: HomeAssistant, entry: FloLogicConfigEntry) -> None:
     """Reload the entry when its options change."""
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant,
+    entry: FloLogicConfigEntry,
+    device: DeviceEntry,
+) -> bool:
+    """Allow deleting a device only once its valve has left the account.
+
+    Valves get sold, replaced and un-shared, and the stale device would
+    otherwise sit in the registry forever. Refusing while the valve is still
+    present matters just as much: deleting a live valve's device removes the
+    only control for a water shutoff, and it would silently come back on the
+    next reload anyway.
+    """
+    del hass
+    known = {valve.unique_id for valve in entry.runtime_data.data.valves.values()}
+    return not any(
+        identifier[1] in known
+        for identifier in device.identifiers
+        if identifier[0] == DOMAIN
+    )

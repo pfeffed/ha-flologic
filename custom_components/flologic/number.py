@@ -37,6 +37,12 @@ from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
 from .entity import FloLogicValveEntity
 from .sensor import OUNCES_PER_MINUTE
 
+PARALLEL_UPDATES = 0
+"""Unlimited: every read comes from the coordinator's single snapshot, and the
+library serializes writes onto one connection regardless of what is asked for
+here."""
+
+
 type Setter = Callable[[FloLogicClient, str, float], Coroutine[Any, Any, None]]
 
 

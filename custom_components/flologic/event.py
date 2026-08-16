@@ -22,6 +22,11 @@ from pyflologic import Notification, Valve
 from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
 from .entity import FloLogicValveEntity
 
+PARALLEL_UPDATES = 0
+"""Unlimited: every read comes from the coordinator's single snapshot, and the
+library serializes writes onto one connection regardless of what is asked for
+here."""
+
 EVENT_SHUTOFF = "water_shutoff"
 EVENT_MODE_CHANGE = "mode_change"
 EVENT_NOTICE = "notice"

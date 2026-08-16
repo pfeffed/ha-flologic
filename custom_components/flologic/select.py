@@ -13,6 +13,11 @@ from pyflologic import ControlMode, FloLogicError
 from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
 from .entity import FloLogicValveEntity
 
+PARALLEL_UPDATES = 0
+"""Unlimited: every read comes from the coordinator's single snapshot, and the
+library serializes writes onto one connection regardless of what is asked for
+here."""
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

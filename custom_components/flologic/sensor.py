@@ -26,6 +26,11 @@ from pyflologic import ControlMode, Valve, ValveMode
 from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
 from .entity import FloLogicValveEntity
 
+PARALLEL_UPDATES = 0
+"""Unlimited: every read comes from the coordinator's single snapshot, and the
+library serializes writes onto one connection regardless of what is asked for
+here."""
+
 OUNCES_PER_MINUTE = "oz/min"
 """FloLogic's own unit, kept rather than converted.
 

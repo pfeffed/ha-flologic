@@ -12,6 +12,7 @@ from homeassistant.helpers import entity_registry as er
 from pyflologic import FloLogicAuthError, FloLogicConnectionError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.flologic import async_remove_config_entry_device
 from custom_components.flologic.const import DOMAIN
 
 from .conftest import make_account, make_valve, setup_integration
@@ -152,3 +153,42 @@ async def test_the_domain_is_registered(
     """Sanity check that the component loads under its own domain."""
     await setup_integration(hass, config_entry)
     assert config_entry.domain == DOMAIN
+
+
+class TestDeviceRemoval:
+    """Deleting a device from the registry."""
+
+    async def _remove(
+        self, hass: HomeAssistant, entry: MockConfigEntry, unique_id: str
+    ) -> bool:
+        device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, unique_id)})
+        assert device is not None
+        return await async_remove_config_entry_device(hass, entry, device)
+
+    async def test_a_live_valve_cannot_be_deleted(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """Deleting it would remove the only control for a water shutoff."""
+        await setup_integration(hass, config_entry)
+        assert await self._remove(hass, config_entry, "hw-106193") is False
+
+    async def test_a_valve_that_left_the_account_can_be_deleted(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """Sold, replaced or un-shared valves would otherwise linger forever."""
+        account = make_account(
+            make_valve("106193", "34 Sample Road"),
+            make_valve("4613", "Riverside Main House"),
+        )
+        mock_client.account = account
+        mock_client.valves = dict(account.valves)
+        await setup_integration(hass, config_entry)
+
+        gone = make_account(make_valve("106193", "34 Sample Road"))
+        mock_client.account = gone
+        mock_client.valves = dict(gone.valves)
+        await config_entry.runtime_data.async_refresh()
+        await hass.async_block_till_done()
+
+        assert await self._remove(hass, config_entry, "hw-4613") is True
+        assert await self._remove(hass, config_entry, "hw-106193") is False
