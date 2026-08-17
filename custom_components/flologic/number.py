@@ -26,16 +26,16 @@ from homeassistant.const import EntityCategory, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from pyflologic import (
+
+from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
+from .entity import FloLogicValveEntity
+from .sensor import OUNCES_PER_MINUTE
+from .vendor.pyflologic import (
     FloLogicClient,
     FloLogicError,
     ToggledSettingName,
     Valve,
 )
-
-from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
-from .entity import FloLogicValveEntity
-from .sensor import OUNCES_PER_MINUTE
 
 PARALLEL_UPDATES = 0
 """Unlimited: every read comes from the coordinator's single snapshot, and the

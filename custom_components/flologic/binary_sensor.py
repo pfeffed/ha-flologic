@@ -19,10 +19,10 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from pyflologic import Valve
 
 from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
 from .entity import FloLogicValveEntity
+from .vendor.pyflologic import Valve
 
 PARALLEL_UPDATES = 0
 """Unlimited: every read comes from the coordinator's single snapshot."""

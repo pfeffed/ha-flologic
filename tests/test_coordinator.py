@@ -10,18 +10,18 @@ from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
-from pyflologic import (
-    DEFAULT_POLL_INTERVAL,
-    FloLogicAuthError,
-    FloLogicConnectionError,
-    ValveMode,
-)
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_fire_time_changed,
 )
 
 from custom_components.flologic.const import CONF_POLL_INTERVAL
+from custom_components.flologic.vendor.pyflologic import (
+    DEFAULT_POLL_INTERVAL,
+    FloLogicAuthError,
+    FloLogicConnectionError,
+    ValveMode,
+)
 
 from .conftest import make_account, make_valve, setup_integration
 

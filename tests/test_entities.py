@@ -11,13 +11,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
-from pyflologic import (
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+from custom_components.flologic.vendor.pyflologic import (
     ControlMode,
     FloLogicCommandError,
     ToggledSettingName,
     ValveMode,
 )
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from .conftest import make_account, make_valve, setup_integration
 
@@ -395,3 +396,24 @@ class TestToggledSettings:
                 {ATTR_ENTITY_ID: "switch.34_sample_road_winter_mode"},
                 blocking=True,
             )
+
+
+class TestUnrecognisedState:
+    """The integration must not present a guess as a fact."""
+
+    async def test_an_unmapped_shutoff_cause_is_not_shown_as_manual(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        await setup_integration(hass, config_entry)
+        await set_account(
+            hass,
+            config_entry,
+            mock_client,
+            make_valve(mode=int(ValveMode.SHUTOFF) | (1 << 27)),
+        )
+        state = hass.states.get(SHUTOFF_REASON_ENTITY)
+        # Not the literal "unknown": Home Assistant reserves that for an
+        # entity with no data, so it would look like a broken sensor.
+        assert state.state == "unrecognized"
+        assert state.state in state.attributes["options"]
+        assert hass.states.get(VALVE_ENTITY).state == "closed"

@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 from homeassistant.core import HomeAssistant
-from pyflologic import FloLogicConnectionError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.flologic.event import (
@@ -14,6 +13,7 @@ from custom_components.flologic.event import (
     EVENT_SHUTOFF,
     classify,
 )
+from custom_components.flologic.vendor.pyflologic import FloLogicConnectionError
 
 from .conftest import make_notification, setup_integration
 

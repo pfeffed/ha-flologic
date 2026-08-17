@@ -22,14 +22,6 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
     TextSelectorType,
 )
-from pyflologic import (
-    DEFAULT_POLL_INTERVAL,
-    MIN_POLL_INTERVAL,
-    DeviceIdentity,
-    FloLogicAuthError,
-    FloLogicClient,
-    FloLogicError,
-)
 
 from .const import (
     CONF_DEVICE_CODE,
@@ -39,6 +31,14 @@ from .const import (
     DOMAIN,
 )
 from .coordinator import FloLogicConfigEntry
+from .vendor.pyflologic import (
+    DEFAULT_POLL_INTERVAL,
+    MIN_POLL_INTERVAL,
+    DeviceIdentity,
+    FloLogicAuthError,
+    FloLogicClient,
+    FloLogicError,
+)
 
 STEP_USER_SCHEMA = vol.Schema(
     {

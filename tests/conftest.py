@@ -9,7 +9,6 @@ import pytest
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
-from pyflologic import Account, Notification, User, Valve
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.flologic.const import (
@@ -17,6 +16,12 @@ from custom_components.flologic.const import (
     CONF_DEVICE_NAME,
     CONF_DEVICE_TOKEN,
     DOMAIN,
+)
+from custom_components.flologic.vendor.pyflologic import (
+    Account,
+    Notification,
+    User,
+    Valve,
 )
 
 pytest_plugins = "pytest_homeassistant_custom_component"

@@ -21,16 +21,16 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from pyflologic import (
+
+from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
+from .entity import FloLogicValveEntity
+from .vendor.pyflologic import (
     PROBLEM_PRIORITY,
     ControlMode,
     ShutoffReason,
     Valve,
     ValveMode,
 )
-
-from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
-from .entity import FloLogicValveEntity
 
 PARALLEL_UPDATES = 0
 """Unlimited: every read comes from the coordinator's single snapshot, and the

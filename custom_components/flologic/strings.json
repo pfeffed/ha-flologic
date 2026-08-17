@@ -123,7 +123,8 @@
           "emergency_shutdown": "Emergency shutdown",
           "low_temperature": "Freeze protection",
           "low_temperature_sensor": "Freeze protection (sensor)",
-          "humidity_sensor": "Humidity detected by sensor"
+          "humidity_sensor": "Humidity detected by sensor",
+          "unrecognized": "Shut off for an unrecognised reason"
         }
       },
       "problem": {

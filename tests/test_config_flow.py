@@ -10,7 +10,6 @@ from homeassistant.config_entries import SOURCE_USER
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from pyflologic import FloLogicAuthError, FloLogicConnectionError, User
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.flologic.const import (
@@ -19,6 +18,11 @@ from custom_components.flologic.const import (
     CONF_DEVICE_TOKEN,
     CONF_POLL_INTERVAL,
     DOMAIN,
+)
+from custom_components.flologic.vendor.pyflologic import (
+    FloLogicAuthError,
+    FloLogicConnectionError,
+    User,
 )
 
 from .conftest import setup_integration

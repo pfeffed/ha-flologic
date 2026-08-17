@@ -11,41 +11,37 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pyflologic
 import pytest
 from homeassistant.const import Platform
 
 from custom_components.flologic import const
+from custom_components.flologic.vendor import pyflologic
 
 COMPONENT = Path(const.__file__).parent
 MANIFEST = json.loads((COMPONENT / "manifest.json").read_text())
 
 
-def test_the_pinned_library_version_is_the_one_being_tested() -> None:
-    """A pin behind the code under test ships a broken install.
+def test_there_are_no_install_time_requirements() -> None:
+    """Nothing may be fetched at setup, which is why the library is vendored.
 
-    The requirement is a direct URL rather than a PyPI pin, because the
-    library is published as a GitHub release instead. The version still has to
-    match, and it appears twice in the URL -- tag and filename -- so both are
-    checked; a tag bumped without rebuilding the wheel would install the old
-    code from a convincing-looking URL.
+    Home Assistant's is_installed() can never consider a direct URL satisfied,
+    so a requirement pointing at a release would be re-downloaded on every
+    startup and would fail setup outright whenever GitHub was unreachable at
+    boot. An integration that shuts off water at an empty house must not lose
+    its leak protection to a slow ISP.
     """
-    requirement = next(
-        item for item in MANIFEST["requirements"] if item.startswith("pyflologic")
-    )
-    version = pyflologic.__version__
-    assert requirement.startswith("pyflologic @ https://"), requirement
-    assert f"/v{version}/" in requirement, requirement
-    assert f"pyflologic-{version}-" in requirement, requirement
+    assert MANIFEST["requirements"] == []
 
 
-def test_the_requirement_url_is_a_wheel_from_a_release() -> None:
-    """A wheel needs no build step, which matters inside the HA container."""
-    requirement = next(
-        item for item in MANIFEST["requirements"] if item.startswith("pyflologic")
-    )
-    assert "/releases/download/" in requirement
-    assert requirement.endswith(".whl")
+def test_the_vendored_version_is_recorded() -> None:
+    """The marker and the vendored package must agree on what shipped."""
+    recorded = (COMPONENT / "vendor" / "VERSION").read_text().strip()
+    assert recorded == pyflologic.__version__
+
+
+def test_the_vendored_library_is_the_one_being_imported() -> None:
+    """Guard against the tests exercising an installed copy by accident."""
+    assert "custom_components/flologic/vendor" in pyflologic.__file__
 
 
 def test_every_api_the_integration_uses_exists_in_the_library() -> None:
@@ -74,13 +70,17 @@ def test_every_api_the_integration_uses_exists_in_the_library() -> None:
         "integration_type",
         "iot_class",
         "issue_tracker",
-        "requirements",
         "version",
     ],
 )
 def test_required_manifest_keys(key: str) -> None:
     """A custom integration needs all of these; hassfest rejects it otherwise."""
     assert MANIFEST.get(key) not in (None, "", [])
+
+
+def test_requirements_is_present_but_empty() -> None:
+    """Declared explicitly rather than omitted, so the absence is deliberate."""
+    assert MANIFEST.get("requirements") == []
 
 
 def test_the_domain_matches_the_folder() -> None:

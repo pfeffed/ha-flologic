@@ -14,11 +14,11 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from pyflologic import ValveMode
 
 from custom_components.flologic import const
 from custom_components.flologic.binary_sensor import BINARY_SENSORS
 from custom_components.flologic.sensor import SENSORS
+from custom_components.flologic.vendor.pyflologic import ValveMode
 
 COMPONENT = Path(const.__file__).parent
 STRINGS = COMPONENT / "strings.json"

@@ -12,7 +12,6 @@ from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceEntry
-from pyflologic import DEFAULT_POLL_INTERVAL, DeviceIdentity, FloLogicClient
 
 from .const import (
     CONF_DEVICE_CODE,
@@ -23,6 +22,7 @@ from .const import (
     PLATFORMS,
 )
 from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
+from .vendor.pyflologic import DEFAULT_POLL_INTERVAL, DeviceIdentity, FloLogicClient
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: FloLogicConfigEntry) -> bool:

@@ -15,7 +15,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from pyflologic import (
+
+from .const import DOMAIN
+from .vendor.pyflologic import (
     Account,
     DeviceIdentity,
     FloLogicAuthError,
@@ -24,8 +26,6 @@ from pyflologic import (
     Notification,
     Valve,
 )
-
-from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
