@@ -9,5 +9,5 @@
   "issue_tracker": "https://github.com/pfeffed/ha-flologic/issues",
   "loggers": ["custom_components.flologic"],
   "requirements": [],
-  "version": "0.2.1"
+  "version": "0.3.0"
 }

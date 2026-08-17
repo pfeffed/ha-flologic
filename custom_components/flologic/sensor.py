@@ -88,11 +88,20 @@ SENSORS: tuple[FloLogicSensorDescription, ...] = (
         value_fn=lambda valve: valve.status,
     ),
     FloLogicSensorDescription(
-        key="current_flow",
-        translation_key="current_flow",
-        native_unit_of_measurement=OUNCES_PER_MINUTE,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda valve: valve.current_flow_oz_per_min,
+        key="flow_started",
+        translation_key="flow_started",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda valve: valve.flow_started_at,
+    ),
+    FloLogicSensorDescription(
+        key="shutoff_at",
+        translation_key="shutoff_at",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        # A timestamp rather than a countdown: it does not move while the flow
+        # continues, so the display counts down from it without the state
+        # being rewritten -- and a rewritten-every-second sensor is how an
+        # integration floods the recorder.
+        value_fn=lambda valve: valve.shutoff_at,
     ),
     FloLogicSensorDescription(
         key="temperature",
@@ -100,21 +109,6 @@ SENSORS: tuple[FloLogicSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda valve: valve.temperature_f,
-    ),
-    FloLogicSensorDescription(
-        key="shutoff_countdown",
-        translation_key="shutoff_countdown",
-        device_class=SensorDeviceClass.DURATION,
-        native_unit_of_measurement=UnitOfTime.SECONDS,
-        value_fn=lambda valve: valve.shutoff_countdown_seconds(),
-    ),
-    FloLogicSensorDescription(
-        key="flow_elapsed",
-        translation_key="flow_elapsed",
-        device_class=SensorDeviceClass.DURATION,
-        native_unit_of_measurement=UnitOfTime.SECONDS,
-        entity_registry_enabled_default=False,
-        value_fn=lambda valve: valve.flow_elapsed_seconds(),
     ),
     FloLogicSensorDescription(
         key="battery",
@@ -135,7 +129,6 @@ SENSORS: tuple[FloLogicSensorDescription, ...] = (
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
         value_fn=lambda valve: valve.signal_strength_dbm,
     ),
     FloLogicSensorDescription(

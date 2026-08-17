@@ -94,15 +94,6 @@
           "unknown_fault": "Unknown fault"
         }
       },
-      "current_flow": {
-        "name": "Current flow"
-      },
-      "shutoff_countdown": {
-        "name": "Shutoff countdown"
-      },
-      "flow_elapsed": {
-        "name": "Flow elapsed"
-      },
       "last_seen": {
         "name": "Last seen"
       },
@@ -141,6 +132,12 @@
           "change_battery": "Battery needs changing",
           "updating": "Updating firmware"
         }
+      },
+      "flow_started": {
+        "name": "Flow started"
+      },
+      "shutoff_at": {
+        "name": "Shutoff due"
       }
     },
     "binary_sensor": {
@@ -149,6 +146,13 @@
         "state": {
           "off": "No",
           "on": "Yes"
+        }
+      },
+      "guest_mode": {
+        "name": "Guest mode",
+        "state": {
+          "off": "Off",
+          "on": "On"
         }
       }
     },
@@ -182,6 +186,9 @@
       },
       "low_temp_shutoff_f": {
         "name": "Low temperature shutoff"
+      },
+      "no_flow_notice": {
+        "name": "No-flow notice"
       }
     },
     "event": {
@@ -219,6 +226,9 @@
   "exceptions": {
     "command_failed": {
       "message": "FloLogic did not accept the command: {error}"
+    },
+    "invalid_setting": {
+      "message": "{error}"
     }
   }
 }

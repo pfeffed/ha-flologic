@@ -24,7 +24,7 @@ from homeassistant.components.number import (
 )
 from homeassistant.const import EntityCategory, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
@@ -33,6 +33,7 @@ from .sensor import OUNCES_PER_MINUTE
 from .vendor.pyflologic import (
     FloLogicClient,
     FloLogicError,
+    FloLogicValidationError,
     ToggledSettingName,
     Valve,
 )
@@ -134,6 +135,20 @@ NUMBERS: tuple[FloLogicNumberDescription, ...] = (
         value_fn=lambda valve: valve.pre_alert_minutes,
         set_fn=lambda client, valve_id, value: client.async_update_settings(
             valve_id, pre_alert_minutes=value
+        ),
+    ),
+    FloLogicNumberDescription(
+        key="no_flow_notice",
+        translation_key="no_flow_notice",
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        native_min_value=0,
+        native_max_value=86400,
+        native_step=60,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.no_flow_notice_seconds,
+        set_fn=lambda client, valve_id, value: client.async_update_settings(
+            valve_id, no_flow_notice_seconds=value
         ),
     ),
     FloLogicNumberDescription(
@@ -245,6 +260,14 @@ class FloLogicNumber(FloLogicValveEntity, NumberEntity):
             await self.entity_description.set_fn(
                 self.coordinator.client, self._valve_id, value
             )
+        except FloLogicValidationError as err:
+            # A value FloLogic would accept and then silently discard. Saying
+            # exactly why beats a generic failure the user cannot act on.
+            raise ServiceValidationError(
+                translation_domain=self.coordinator.config_entry.domain,
+                translation_key="invalid_setting",
+                translation_placeholders={"error": str(err)},
+            ) from err
         except FloLogicError as err:
             raise HomeAssistantError(
                 translation_domain=self.coordinator.config_entry.domain,

@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
 from unittest.mock import MagicMock
 
 import pytest
 from homeassistant.components.valve import ValveState
 from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -16,6 +17,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.flologic.vendor.pyflologic import (
     ControlMode,
     FloLogicCommandError,
+    FloLogicValidationError,
     ToggledSettingName,
     ValveMode,
 )
@@ -417,3 +419,96 @@ class TestUnrecognisedState:
         assert state.state == "unrecognized"
         assert state.state in state.attributes["options"]
         assert hass.states.get(VALVE_ENTITY).state == "closed"
+
+
+class TestFlowTiming:
+    """Timestamps rather than counters, so nothing is rewritten every second."""
+
+    FLOWING: ClassVar[dict[str, object]] = {
+        "flowState": 4,
+        "mode": int(ValveMode.HOME),
+        "homeIntervalTime": 30,
+        "lastNewFlow": "2026-08-16T12:00:00Z",
+    }
+
+    async def test_both_timestamps_appear_while_flowing(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        await setup_integration(hass, config_entry)
+        await set_account(hass, config_entry, mock_client, make_valve(**self.FLOWING))
+
+        started = hass.states.get("sensor.34_sample_road_flow_started")
+        due = hass.states.get("sensor.34_sample_road_shutoff_due")
+        assert started.state == "2026-08-16T12:00:00+00:00"
+        # Start plus the 30 minute Home limit.
+        assert due.state == "2026-08-16T12:30:00+00:00"
+
+    async def test_the_target_does_not_move_between_updates(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """The reason for a timestamp: repeated updates write no new state."""
+        await setup_integration(hass, config_entry)
+        await set_account(hass, config_entry, mock_client, make_valve(**self.FLOWING))
+        first = hass.states.get("sensor.34_sample_road_shutoff_due").state
+        await set_account(hass, config_entry, mock_client, make_valve(**self.FLOWING))
+        assert hass.states.get("sensor.34_sample_road_shutoff_due").state == first
+
+    async def test_no_timestamps_when_idle(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        await setup_integration(hass, config_entry)
+        assert hass.states.get("sensor.34_sample_road_flow_started").state == "unknown"
+        assert hass.states.get("sensor.34_sample_road_shutoff_due").state == "unknown"
+
+    async def test_signal_strength_is_enabled_by_default(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """A valve on bad wifi is one you cannot command in an emergency."""
+        await setup_integration(hass, config_entry)
+        assert hass.states.get("sensor.34_sample_road_signal_strength").state == "-83.0"
+
+    async def test_guest_mode_is_visible_but_not_commandable(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """Its duration units are unestablished, so it is read-only for now."""
+        await setup_integration(hass, config_entry)
+        assert hass.states.get("binary_sensor.34_sample_road_guest_mode") is not None
+        assert hass.states.get("switch.34_sample_road_guest_mode") is None
+        assert hass.states.get("number.34_sample_road_guest_mode") is None
+
+
+class TestSilentlyIgnoredWrites:
+    """A value FloLogic would discard should fail here, saying why."""
+
+    async def test_a_flow_sensitivity_below_winter_is_refused_with_a_reason(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        mock_client.async_update_settings.side_effect = FloLogicValidationError(
+            "flow sensitivity 1.0 is below the winter flow sensitivity 4.0; "
+            "FloLogic ignores such a change without reporting it."
+        )
+        await setup_integration(hass, config_entry)
+        with pytest.raises(ServiceValidationError, match="winter flow sensitivity"):
+            await hass.services.async_call(
+                "number",
+                "set_value",
+                {
+                    ATTR_ENTITY_ID: "number.34_sample_road_flow_sensitivity",
+                    "value": 1.0,
+                },
+                blocking=True,
+            )
+
+    async def test_a_genuine_failure_is_still_reported_as_one(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """Only a knowingly-ignored write is a validation error."""
+        mock_client.async_update_settings.side_effect = FloLogicCommandError("nope")
+        await setup_integration(hass, config_entry)
+        with pytest.raises(HomeAssistantError, match="did not accept"):
+            await hass.services.async_call(
+                "number",
+                "set_value",
+                {ATTR_ENTITY_ID: "number.34_sample_road_home_flow_limit", "value": 45},
+                blocking=True,
+            )
