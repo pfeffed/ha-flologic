@@ -32,4 +32,15 @@ fills the account's device list with single-use entries.
 
 CONF_POLL_INTERVAL = "poll_interval"
 
+CONF_ENABLED_DEFAULTS_VERSION = "enabled_defaults_version"
+ENABLED_DEFAULTS_VERSION = 1
+"""Bumped when an entity becomes enabled by default after previously not being.
+
+Home Assistant records `disabled_by` in the entity registry the first time an
+entity is seen, and never revisits it. Changing
+`entity_registry_enabled_default` therefore only reaches new installs; anyone
+who already had the integration keeps the old state forever unless something
+migrates it.
+"""
+
 MANUFACTURER = "FloLogic"

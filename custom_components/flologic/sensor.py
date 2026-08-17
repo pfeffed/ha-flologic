@@ -139,14 +139,6 @@ SENSORS: tuple[FloLogicSensorDescription, ...] = (
         value_fn=lambda valve: valve.last_seen,
     ),
     FloLogicSensorDescription(
-        key="flow_sensitivity",
-        translation_key="flow_sensitivity",
-        native_unit_of_measurement=OUNCES_PER_MINUTE,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
-        value_fn=lambda valve: valve.flow_sensitivity_oz_per_min,
-    ),
-    FloLogicSensorDescription(
         key="current_flow_limit",
         translation_key="current_flow_limit",
         native_unit_of_measurement=UnitOfTime.MINUTES,

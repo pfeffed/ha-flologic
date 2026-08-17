@@ -195,3 +195,73 @@ class TestDeviceRemoval:
 
         assert await self._remove(hass, config_entry, "hw-4613") is True
         assert await self._remove(hass, config_entry, "hw-106193") is False
+
+
+class TestEnabledDefaultsMigration:
+    """Home Assistant records disabled_by once and never revisits it."""
+
+    async def test_an_entity_this_integration_disabled_is_re_enabled(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """Without this, an existing install never sees the change."""
+        await setup_integration(hass, config_entry)
+        registry = er.async_get(hass)
+        entity_id = "sensor.34_sample_road_signal_strength"
+        registry.async_update_entity(
+            entity_id, disabled_by=er.RegistryEntryDisabler.INTEGRATION
+        )
+        hass.config_entries.async_update_entry(
+            config_entry,
+            data={
+                k: v
+                for k, v in config_entry.data.items()
+                if k != "enabled_defaults_version"
+            },
+        )
+        await hass.config_entries.async_reload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert registry.async_get(entity_id).disabled_by is None
+
+    async def test_a_user_disabled_entity_is_left_alone(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """Overriding a deliberate choice would be taking it back off them."""
+        await setup_integration(hass, config_entry)
+        registry = er.async_get(hass)
+        entity_id = "sensor.34_sample_road_signal_strength"
+        registry.async_update_entity(
+            entity_id, disabled_by=er.RegistryEntryDisabler.USER
+        )
+        hass.config_entries.async_update_entry(
+            config_entry,
+            data={
+                k: v
+                for k, v in config_entry.data.items()
+                if k != "enabled_defaults_version"
+            },
+        )
+        await hass.config_entries.async_reload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert (
+            registry.async_get(entity_id).disabled_by is er.RegistryEntryDisabler.USER
+        )
+
+    async def test_the_migration_runs_only_once(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        await setup_integration(hass, config_entry)
+        assert config_entry.data["enabled_defaults_version"] == 1
+        registry = er.async_get(hass)
+        entity_id = "sensor.34_sample_road_signal_strength"
+        registry.async_update_entity(
+            entity_id, disabled_by=er.RegistryEntryDisabler.INTEGRATION
+        )
+        await hass.config_entries.async_reload(config_entry.entry_id)
+        await hass.async_block_till_done()
+        # The marker is already current, so nothing is touched again.
+        assert (
+            registry.async_get(entity_id).disabled_by
+            is er.RegistryEntryDisabler.INTEGRATION
+        )

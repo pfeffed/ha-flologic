@@ -9,7 +9,8 @@ rest unreachable.
 from __future__ import annotations
 
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceEntry
 
@@ -17,8 +18,10 @@ from .const import (
     CONF_DEVICE_CODE,
     CONF_DEVICE_NAME,
     CONF_DEVICE_TOKEN,
+    CONF_ENABLED_DEFAULTS_VERSION,
     CONF_POLL_INTERVAL,
     DOMAIN,
+    ENABLED_DEFAULTS_VERSION,
     PLATFORMS,
 )
 from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
@@ -50,6 +53,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: FloLogicConfigEntry) -> 
 
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _async_apply_enabled_defaults(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
     return True
 
@@ -63,6 +67,32 @@ async def async_unload_entry(hass: HomeAssistant, entry: FloLogicConfigEntry) ->
     per reload.
     """
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+@callback
+def _async_apply_enabled_defaults(
+    hass: HomeAssistant, entry: FloLogicConfigEntry
+) -> None:
+    """Re-enable entities that have since become enabled by default.
+
+    Only those this integration disabled are touched. A user who switched
+    something off deliberately is recorded as `disabled_by == USER`, and
+    overriding that would be taking a decision back off them.
+    """
+    if entry.data.get(CONF_ENABLED_DEFAULTS_VERSION) == ENABLED_DEFAULTS_VERSION:
+        return
+
+    registry = er.async_get(hass)
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if entity.disabled_by is not er.RegistryEntryDisabler.INTEGRATION:
+            continue
+        if entity.entity_id.endswith("_signal_strength"):
+            registry.async_update_entity(entity.entity_id, disabled_by=None)
+
+    hass.config_entries.async_update_entry(
+        entry,
+        data={**entry.data, CONF_ENABLED_DEFAULTS_VERSION: ENABLED_DEFAULTS_VERSION},
+    )
 
 
 async def _async_reload_entry(hass: HomeAssistant, entry: FloLogicConfigEntry) -> None:

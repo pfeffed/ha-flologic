@@ -97,9 +97,6 @@
       "last_seen": {
         "name": "Last seen"
       },
-      "flow_sensitivity": {
-        "name": "Flow sensitivity"
-      },
       "current_flow_limit": {
         "name": "Active flow limit"
       },
