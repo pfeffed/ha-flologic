@@ -111,23 +111,43 @@
       },
       "current_flow_limit": {
         "name": "Active flow limit"
+      },
+      "shutoff_reason": {
+        "name": "Shutoff reason",
+        "state": {
+          "none": "Not shut off",
+          "manual": "Shut off manually",
+          "sensor_leak": "Leak detected by sensor",
+          "external_leak": "Leak detected externally",
+          "flow_time_exceeded": "Flow ran too long",
+          "emergency_shutdown": "Emergency shutdown",
+          "low_temperature": "Freeze protection",
+          "low_temperature_sensor": "Freeze protection (sensor)",
+          "humidity_sensor": "Humidity detected by sensor"
+        }
+      },
+      "problem": {
+        "name": "Problem",
+        "state": {
+          "none": "None",
+          "valve_failure": "Valve failure",
+          "error": "Error",
+          "system_down": "System down",
+          "unknown_fault": "Unknown fault",
+          "communication_error": "Communication error",
+          "low_temp_alert": "Low temperature",
+          "ac_lost": "Mains power lost",
+          "change_battery": "Battery needs changing",
+          "updating": "Updating firmware"
+        }
       }
     },
     "binary_sensor": {
-      "water_off": {
-        "name": "Water off"
-      },
-      "warning": {
-        "name": "Warning"
-      },
-      "critical_fault": {
-        "name": "Critical fault"
-      },
       "water_flowing": {
-        "name": "Water flowing",
+        "name": "Water flow detected",
         "state": {
-          "off": "No flow",
-          "on": "Flowing"
+          "off": "No",
+          "on": "Yes"
         }
       }
     },

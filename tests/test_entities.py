@@ -24,7 +24,8 @@ from .conftest import make_account, make_valve, setup_integration
 VALVE_ENTITY = "valve.34_sample_road"
 STATUS_ENTITY = "sensor.34_sample_road_status"
 MODE_ENTITY = "select.34_sample_road_mode"
-WATER_OFF_ENTITY = "binary_sensor.34_sample_road_water_off"
+SHUTOFF_REASON_ENTITY = "sensor.34_sample_road_shutoff_reason"
+PROBLEM_ENTITY = "sensor.34_sample_road_problem"
 ONLINE_ENTITY = "binary_sensor.34_sample_road_connectivity"
 
 
@@ -190,32 +191,77 @@ class TestSensors:
         assert hass.states.get("sensor.34_sample_road_battery").state == "50.0"
 
 
-class TestBinarySensors:
-    """Grouped conditions and availability."""
+class TestShutoffReasonAndProblem:
+    """State and reason are separate entities, answering separate questions."""
 
-    async def test_water_off_lists_the_flags_that_caused_it(
+    async def test_an_open_valve_has_no_reason_and_no_problem(
         self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
     ) -> None:
         await setup_integration(hass, config_entry)
-        assert hass.states.get(WATER_OFF_ENTITY).state == STATE_OFF
+        assert hass.states.get(SHUTOFF_REASON_ENTITY).state == "none"
+        assert hass.states.get(PROBLEM_ENTITY).state == "none"
+
+    async def test_a_manual_shutoff_says_so(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        await setup_integration(hass, config_entry)
+        await set_account(
+            hass, config_entry, mock_client, make_valve(mode=int(ValveMode.SHUTOFF))
+        )
+        assert hass.states.get(VALVE_ENTITY).state == "closed"
+        assert hass.states.get(SHUTOFF_REASON_ENTITY).state == "manual"
+        # Being told to close is not a problem.
+        assert hass.states.get(PROBLEM_ENTITY).state == "none"
+
+    async def test_an_automatic_shutoff_names_the_cause(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        await setup_integration(hass, config_entry)
         await set_account(hass, config_entry, mock_client, make_valve(mode=40))
-        state = hass.states.get(WATER_OFF_ENTITY)
-        assert state.state == STATE_ON
-        assert set(state.attributes["active_flags"]) == {
-            "flow_time_exceeded",
-            "shutoff",
-        }
+        assert hass.states.get(VALVE_ENTITY).state == "closed"
+        assert hass.states.get(SHUTOFF_REASON_ENTITY).state == "flow_time_exceeded"
+
+    async def test_a_problem_is_reported_without_closing_the_valve(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        await setup_integration(hass, config_entry)
+        await set_account(
+            hass,
+            config_entry,
+            mock_client,
+            make_valve(mode=ValveMode.HOME | ValveMode.CHANGE_BATTERY),
+        )
+        assert hass.states.get(VALVE_ENTITY).state == "open"
+        assert hass.states.get(SHUTOFF_REASON_ENTITY).state == "none"
+        assert hass.states.get(PROBLEM_ENTITY).state == "change_battery"
+
+    async def test_every_reported_value_is_a_declared_option(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """An enum sensor reporting an undeclared value logs an error in HA."""
+        await setup_integration(hass, config_entry)
+        for mode in (
+            int(ValveMode.HOME),
+            int(ValveMode.SHUTOFF),
+            40,
+            int(ValveMode.SENSOR_LEAK),
+            int(ValveMode.VALVE_FAILURE),
+        ):
+            await set_account(hass, config_entry, mock_client, make_valve(mode=mode))
+            for entity_id in (SHUTOFF_REASON_ENTITY, PROBLEM_ENTITY):
+                state = hass.states.get(entity_id)
+                assert state.state in state.attributes["options"], (entity_id, mode)
+
+
+class TestConnectivity:
+    """The one sensor that must survive the valve going away."""
 
     async def test_connectivity_still_reports_when_the_valve_is_offline(
         self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
     ) -> None:
-        """The one sensor that must not go unavailable when the valve does."""
         await setup_integration(hass, config_entry)
         await set_account(hass, config_entry, mock_client, make_valve(online=False))
-
         assert hass.states.get(ONLINE_ENTITY).state == STATE_OFF
-        # Everything else correctly reports that it cannot know.
-        assert hass.states.get(WATER_OFF_ENTITY).state == STATE_UNAVAILABLE
         assert hass.states.get(VALVE_ENTITY).state == STATE_UNAVAILABLE
 
 

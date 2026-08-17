@@ -21,7 +21,13 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from pyflologic import ControlMode, Valve, ValveMode
+from pyflologic import (
+    PROBLEM_PRIORITY,
+    ControlMode,
+    ShutoffReason,
+    Valve,
+    ValveMode,
+)
 
 from .coordinator import FloLogicConfigEntry, FloLogicCoordinator
 from .entity import FloLogicValveEntity
@@ -48,7 +54,30 @@ class FloLogicSensorDescription(SensorEntityDescription):
     exists_fn: Callable[[Valve], bool] = lambda _valve: True
 
 
+NONE = "none"
+"""Explicit "nothing wrong" rather than an empty state.
+
+An enum sensor that goes unknown when healthy cannot be told apart from one
+that is broken, and "no shutoff reason" is a fact worth stating.
+"""
+
 SENSORS: tuple[FloLogicSensorDescription, ...] = (
+    FloLogicSensorDescription(
+        key="shutoff_reason",
+        translation_key="shutoff_reason",
+        device_class=SensorDeviceClass.ENUM,
+        options=[NONE, *(reason.value for reason in ShutoffReason)],
+        value_fn=lambda valve: (
+            valve.shutoff_reason.value if valve.shutoff_reason else NONE
+        ),
+    ),
+    FloLogicSensorDescription(
+        key="problem",
+        translation_key="problem",
+        device_class=SensorDeviceClass.ENUM,
+        options=[NONE, *(flag.name.lower() for flag in PROBLEM_PRIORITY)],
+        value_fn=lambda valve: valve.problem.name.lower() if valve.problem else NONE,
+    ),
     FloLogicSensorDescription(
         key="status",
         translation_key="status",

@@ -18,17 +18,22 @@ recognised and skipped.
 
 | Entity | Notes |
 | --- | --- |
-| `valve` | Open/close the water. Closed for *any* shutoff condition, not just a manual one |
+| `valve` | Open or closed — **whether** the water is off |
+| `sensor` — Shutoff reason | **Why** it is off: `Not shut off`, `Shut off manually`, `Leak detected`, `Flow ran too long`, `Freeze protection`… |
+| `sensor` — Problem | What else is wrong while the valve stays open: `Valve failure`, `Communication error`, `Battery needs changing`… |
 | `select` — Mode | `home` / `away` / `bypass` / `shutoff` / `disabled` |
-| `sensor` — Status | Headline state, with the decoded mode bits as attributes |
-| `sensor` — Current flow | oz/min, matching the app's own unit |
+| `sensor` — Status | One-line headline, with the decoded mode bits as attributes |
+| `sensor` — Current flow | oz/min, matching the app's own unit. See the caveat below |
 | `sensor` — Temperature | |
 | `sensor` — Shutoff countdown | See the caveat below |
-| `binary_sensor` — Water off | On for any condition that closed the valve |
-| `binary_sensor` — Warning / Critical fault | Grouped from the mode bitfield |
-| `binary_sensor` — Water flowing | See the caveat below |
+| `binary_sensor` — Water flow detected | Yes/No. See the caveat below |
 | `binary_sensor` — Connectivity | Stays available while the valve is offline |
 | `event` — Notification | FloLogic's own log: shutoffs, mode changes, notices |
+
+**Shutoff reason** is the one to automate on. A valve reports `SHUTOFF`
+whether you closed it or it closed itself, so the bit alone cannot tell a
+leak from a deliberate shutoff — the reason sensor can, and reports
+`Shut off manually` only when nothing caused it.
 
 Read-only diagnostics (signal strength, elapsed flow, active flow limit) are
 present but disabled by default.
