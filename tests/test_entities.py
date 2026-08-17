@@ -512,3 +512,41 @@ class TestSilentlyIgnoredWrites:
                 {ATTR_ENTITY_ID: "number.34_sample_road_home_flow_limit", "value": 45},
                 blocking=True,
             )
+
+
+class TestTemperatureOffset:
+    """A calibration offset, which is a difference rather than a temperature."""
+
+    async def test_it_is_writable(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        await setup_integration(hass, config_entry)
+        await hass.services.async_call(
+            "number",
+            "set_value",
+            {ATTR_ENTITY_ID: "number.34_sample_road_temperature_offset", "value": -2},
+            blocking=True,
+        )
+        mock_client.async_update_settings.assert_awaited_once_with(
+            "106193", temperature_offset_f=-2.0
+        )
+
+    async def test_it_is_not_converted_for_metric_users(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """An offset converts by ratio, not by the temperature formula.
+
+        With a temperature device class Home Assistant would render a 5 F
+        offset as -15 C, which is the conversion for an absolute reading and
+        nonsense for a difference. There is no device class for a difference,
+        so the value stays in FloLogic's units.
+        """
+        hass.config.units = METRIC_SYSTEM
+        account = make_account(make_valve(temperatureOffset=5))
+        mock_client.account = account
+        mock_client.valves = dict(account.valves)
+        await setup_integration(hass, config_entry)
+
+        state = hass.states.get("number.34_sample_road_temperature_offset")
+        assert state.state == "5.0"
+        assert state.attributes["unit_of_measurement"] == "°F"

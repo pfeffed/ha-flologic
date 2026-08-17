@@ -152,6 +152,26 @@ NUMBERS: tuple[FloLogicNumberDescription, ...] = (
         ),
     ),
     FloLogicNumberDescription(
+        key="temperature_offset",
+        translation_key="temperature_offset",
+        # Deliberately no temperature device class. Home Assistant would
+        # convert this the way it converts a temperature -- 5 F becoming
+        # -15 C -- but an offset is a *difference*, which converts by ratio
+        # alone. There is no device class for a temperature difference, so
+        # the value is shown in FloLogic's own units and left uncoverted,
+        # which is at least never wrong.
+        native_unit_of_measurement="°F",
+        native_min_value=-20,
+        native_max_value=20,
+        native_step=1,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.temperature_offset_f,
+        set_fn=lambda client, valve_id, value: client.async_update_settings(
+            valve_id, temperature_offset_f=value
+        ),
+    ),
+    FloLogicNumberDescription(
         key="auto_away_hours",
         translation_key="auto_away_hours",
         native_unit_of_measurement=UnitOfTime.HOURS,

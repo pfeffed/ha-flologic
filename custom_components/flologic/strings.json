@@ -186,6 +186,9 @@
       },
       "no_flow_notice": {
         "name": "No-flow notice"
+      },
+      "temperature_offset": {
+        "name": "Temperature offset"
       }
     },
     "event": {
