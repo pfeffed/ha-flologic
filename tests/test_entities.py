@@ -568,3 +568,54 @@ class TestTemperatureOffset:
         state = hass.states.get("number.34_sample_road_temperature_offset")
         assert state.state == "5.0"
         assert state.attributes["unit_of_measurement"] == "°F"
+
+
+class TestFlowLimitCaps:
+    """Flow limits follow the app's range, not the API's."""
+
+    @pytest.mark.parametrize(
+        "entity",
+        [
+            "number.34_sample_road_home_flow_limit",
+            "number.34_sample_road_away_flow_limit",
+            "number.34_sample_road_guest_flow_limit",
+        ],
+    )
+    async def test_a_flow_limit_stops_at_the_apps_maximum(
+        self,
+        hass: HomeAssistant,
+        config_entry: MockConfigEntry,
+        mock_client: MagicMock,
+        entity: str,
+    ) -> None:
+        """The cloud stores more, but the app will not produce it.
+
+        A longer limit is weaker leak protection, so the vendor's range is the
+        safe side of an uncertainty.
+        """
+        await setup_integration(hass, config_entry)
+        assert hass.states.get(entity).attributes["max"] == 99
+
+    async def test_bypass_is_not_capped_with_the_flow_limits(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        """Bypass suspends monitoring rather than bounding it."""
+        await setup_integration(hass, config_entry)
+        state = hass.states.get("number.34_sample_road_bypass_duration")
+        assert state.attributes["max"] > 99
+
+    async def test_a_value_above_the_cap_is_refused_by_home_assistant(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
+    ) -> None:
+        await setup_integration(hass, config_entry)
+        with pytest.raises(ServiceValidationError):
+            await hass.services.async_call(
+                "number",
+                "set_value",
+                {
+                    ATTR_ENTITY_ID: "number.34_sample_road_home_flow_limit",
+                    "value": 120,
+                },
+                blocking=True,
+            )
+        mock_client.async_update_settings.assert_not_awaited()

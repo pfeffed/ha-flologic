@@ -44,6 +44,20 @@ library serializes writes onto one connection regardless of what is asked for
 here."""
 
 
+MAX_FLOW_LIMIT_MINUTES = 99
+"""Longest flow limit FloLogic's app offers, shown there as "1 hour, 39 minutes".
+
+The cloud itself accepts more -- 100 and 120 were both stored without
+complaint -- so this is the app's range rather than the API's. It is matched
+anyway: a value the vendor's own interface cannot produce is untested
+territory on a device whose job is shutting off water, and the error runs the
+wrong way, because a longer limit means longer before a leak is stopped.
+
+Bypass is deliberately not capped here. It suspends monitoring rather than
+bounding it, and the app treats its duration as open-ended.
+"""
+
+
 type Setter = Callable[[FloLogicClient, str, float], Coroutine[Any, Any, None]]
 
 
@@ -70,7 +84,7 @@ NUMBERS: tuple[FloLogicNumberDescription, ...] = (
         translation_key="home_limit",
         native_unit_of_measurement=UnitOfTime.MINUTES,
         native_min_value=1,
-        native_max_value=1440,
+        native_max_value=MAX_FLOW_LIMIT_MINUTES,
         native_step=1,
         mode=NumberMode.BOX,
         entity_category=EntityCategory.CONFIG,
@@ -86,7 +100,7 @@ NUMBERS: tuple[FloLogicNumberDescription, ...] = (
         # Sub-minute limits are normal here: a real valve runs 0.5, which the
         # app displays as "6 seconds"... at 0.1. Minutes is the wire unit.
         native_min_value=0.1,
-        native_max_value=1440,
+        native_max_value=MAX_FLOW_LIMIT_MINUTES,
         native_step=0.1,
         mode=NumberMode.BOX,
         entity_category=EntityCategory.CONFIG,
@@ -176,7 +190,7 @@ NUMBERS: tuple[FloLogicNumberDescription, ...] = (
         translation_key="guest_flow_limit",
         native_unit_of_measurement=UnitOfTime.MINUTES,
         native_min_value=0.1,
-        native_max_value=1440,
+        native_max_value=MAX_FLOW_LIMIT_MINUTES,
         native_step=0.1,
         mode=NumberMode.BOX,
         entity_category=EntityCategory.CONFIG,
