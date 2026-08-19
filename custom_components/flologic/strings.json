@@ -135,6 +135,9 @@
       },
       "shutoff_at": {
         "name": "Shutoff due"
+      },
+      "guest_mode_expires": {
+        "name": "Guest mode ends"
       }
     },
     "binary_sensor": {
@@ -143,13 +146,6 @@
         "state": {
           "off": "No",
           "on": "Yes"
-        }
-      },
-      "guest_mode": {
-        "name": "Guest mode",
-        "state": {
-          "off": "Off",
-          "on": "On"
         }
       }
     },
@@ -189,6 +185,9 @@
       },
       "temperature_offset": {
         "name": "Temperature offset"
+      },
+      "guest_flow_limit": {
+        "name": "Guest flow limit"
       }
     },
     "event": {
@@ -220,6 +219,9 @@
       },
       "low_temp_shutoff": {
         "name": "Low temperature shutoff"
+      },
+      "guest_mode": {
+        "name": "Guest mode"
       }
     }
   },

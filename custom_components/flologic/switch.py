@@ -62,6 +62,13 @@ SWITCHES: tuple[FloLogicSwitchDescription, ...] = (
         value_fn=lambda valve: valve.winter_flow_sensitivity,
     ),
     FloLogicSwitchDescription(
+        key="guest_mode",
+        translation_key="guest_mode",
+        entity_category=EntityCategory.CONFIG,
+        setting=ToggledSettingName.GUEST_FLOW_LIMIT,
+        value_fn=lambda valve: valve.guest_flow_limit,
+    ),
+    FloLogicSwitchDescription(
         key="low_temp_alert",
         translation_key="low_temp_alert",
         entity_category=EntityCategory.CONFIG,

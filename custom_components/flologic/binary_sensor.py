@@ -47,12 +47,6 @@ BINARY_SENSORS: tuple[FloLogicBinarySensorDescription, ...] = (
         survives_offline=True,
     ),
     FloLogicBinarySensorDescription(
-        key="guest_mode",
-        translation_key="guest_mode",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda valve: valve.guest_mode.enabled,
-    ),
-    FloLogicBinarySensorDescription(
         key="water_flowing",
         translation_key="water_flowing",
         value_fn=lambda valve: valve.is_water_flowing,

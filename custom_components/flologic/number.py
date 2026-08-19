@@ -172,6 +172,18 @@ NUMBERS: tuple[FloLogicNumberDescription, ...] = (
         ),
     ),
     FloLogicNumberDescription(
+        key="guest_flow_limit",
+        translation_key="guest_flow_limit",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        native_min_value=0.1,
+        native_max_value=1440,
+        native_step=0.1,
+        mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda valve: valve.guest_flow_limit.configured,
+        set_fn=_toggled_setter(ToggledSettingName.GUEST_FLOW_LIMIT),
+    ),
+    FloLogicNumberDescription(
         key="auto_away_hours",
         translation_key="auto_away_hours",
         native_unit_of_measurement=UnitOfTime.HOURS,

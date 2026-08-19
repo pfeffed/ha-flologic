@@ -132,6 +132,13 @@ SENSORS: tuple[FloLogicSensorDescription, ...] = (
         value_fn=lambda valve: valve.signal_strength_dbm,
     ),
     FloLogicSensorDescription(
+        key="guest_mode_expires",
+        translation_key="guest_mode_expires",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda valve: valve.guest_mode_expires_at,
+    ),
+    FloLogicSensorDescription(
         key="last_seen",
         translation_key="last_seen",
         device_class=SensorDeviceClass.TIMESTAMP,

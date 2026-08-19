@@ -467,14 +467,32 @@ class TestFlowTiming:
         await setup_integration(hass, config_entry)
         assert hass.states.get("sensor.34_sample_road_signal_strength").state == "-83.0"
 
-    async def test_guest_mode_is_visible_but_not_commandable(
+    async def test_guest_mode_is_a_switch_and_a_flow_limit(
         self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
     ) -> None:
-        """Its duration units are unestablished, so it is read-only for now."""
+        """The value is a flow limit in minutes, not a duration.
+
+        Two real valves switched on together, carrying 1 and 60, expired at
+        the same instant, so the number cannot be a span. How long guest mode
+        lasts is a separate timestamp the cloud decides.
+        """
+        account = make_account(
+            make_valve(guestModeTime=60, guestModeDuration="2026-08-19T06:59:00")
+        )
+        mock_client.account = account
+        mock_client.valves = dict(account.valves)
         await setup_integration(hass, config_entry)
-        assert hass.states.get("binary_sensor.34_sample_road_guest_mode") is not None
-        assert hass.states.get("switch.34_sample_road_guest_mode") is None
-        assert hass.states.get("number.34_sample_road_guest_mode") is None
+
+        limit = hass.states.get("number.34_sample_road_guest_flow_limit")
+        assert limit.state == "60.0"
+        assert limit.attributes["unit_of_measurement"] == "min"
+        assert hass.states.get("switch.34_sample_road_guest_mode").state == STATE_ON
+        assert (
+            hass.states.get("sensor.34_sample_road_guest_mode_ends").state
+            == "2026-08-19T06:59:00+00:00"
+        )
+        # Superseded by the switch.
+        assert hass.states.get("binary_sensor.34_sample_road_guest_mode") is None
 
 
 class TestSilentlyIgnoredWrites:
