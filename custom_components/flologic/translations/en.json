@@ -1,0 +1,238 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to FloLogic",
+        "description": "Enter the API credentials FloLogic issued you. Every valve they can see is added, so one entry covers all of them.",
+        "data": {
+          "api_key": "API key",
+          "company_id": "Company ID",
+          "webhook_secret": "Webhook signing secret"
+        },
+        "data_description": {
+          "api_key": "Your FloLogic Web API key. It is stored locally and sent only to FloLogic.",
+          "company_id": "The company ID issued with the key. FloLogic needs both.",
+          "webhook_secret": "Optional. From Dashboard > API Manager. Needed to receive callbacks, which update Home Assistant within seconds instead of on the next poll."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate FloLogic",
+        "description": "FloLogic rejected the saved API key for company {company_id}. Enter a new one.",
+        "data": {
+          "api_key": "API key"
+        }
+      },
+      "reconfigure": {
+        "title": "Update FloLogic credentials",
+        "description": "Replace the API key or the webhook signing secret for company {company_id}. Leave a field empty to keep its current value.",
+        "data": {
+          "api_key": "API key",
+          "webhook_secret": "Webhook signing secret"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach FloLogic. Check your internet connection and try again.",
+      "invalid_auth": "FloLogic rejected that API key or company ID.",
+      "unknown": "Unexpected error talking to FloLogic."
+    },
+    "abort": {
+      "already_configured": "This FloLogic company is already set up.",
+      "reauth_successful": "FloLogic re-authenticated successfully.",
+      "reconfigure_successful": "FloLogic credentials updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "FloLogic options",
+        "description": "FloLogic's Web API has no push channel of its own. Without callbacks, Home Assistant learns of changes only when it polls.",
+        "data": {
+          "poll_interval": "Polling interval",
+          "use_callbacks": "Receive callbacks"
+        },
+        "data_description": {
+          "poll_interval": "Seconds between polls. FloLogic documents no rate limit, so the minimum is conservative.",
+          "use_callbacks": "Register a callback with FloLogic so changes arrive within seconds. Needs the webhook signing secret, and either Home Assistant Cloud or an external URL FloLogic can reach."
+        }
+      }
+    },
+    "error": {
+      "secret_required": "Add the webhook signing secret first (Reconfigure on the integration's menu). Unsigned callbacks are not accepted.",
+      "no_url": "FloLogic cannot reach this Home Assistant. Sign in to Home Assistant Cloud, or set an external URL under Settings > System > Network."
+    }
+  },
+  "entity": {
+    "select": {
+      "valve_mode": {
+        "name": "Mode",
+        "state": {
+          "home": "Home",
+          "away": "Away",
+          "bypass": "Bypass",
+          "shutoff": "Shutoff"
+        }
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "unknown": "Unknown",
+          "home": "Home",
+          "away": "Away",
+          "bypass": "Bypass",
+          "shutoff": "Shutoff",
+          "disabled": "Disabled",
+          "flow_time_exceeded": "Flow time exceeded",
+          "external_leak": "External leak",
+          "auto_away": "Auto away",
+          "external_bypass": "External bypass",
+          "delay_away": "Delay away",
+          "external_away": "External away",
+          "override": "Override",
+          "ac_lost": "Mains power lost",
+          "change_battery": "Change battery",
+          "error": "Error",
+          "sensor_leak": "Sensor leak",
+          "system_down": "System down",
+          "valve_failure": "Valve failure",
+          "communication_error": "Communication error",
+          "external_home": "External home",
+          "external_emergency_shutdown": "External emergency shutdown",
+          "updating": "Updating",
+          "external_override": "External override",
+          "low_temp_alert": "Low temp alert",
+          "low_temp_shutoff": "Low temp shutoff",
+          "humidity_sensor_shutoff": "Humidity sensor shutoff",
+          "low_temp_sensor_shutoff": "Low temp sensor shutoff",
+          "unknown_fault": "Unknown fault"
+        }
+      },
+      "shutoff_reason": {
+        "name": "Shutoff reason",
+        "state": {
+          "none": "Not shut off",
+          "manual": "Shut off manually",
+          "sensor_leak": "Leak detected by sensor",
+          "external_leak": "Leak detected externally",
+          "flow_time_exceeded": "Flow ran too long",
+          "emergency_shutdown": "Emergency shutdown",
+          "low_temperature": "Freeze protection",
+          "low_temperature_sensor": "Freeze protection (sensor)",
+          "humidity_sensor": "Humidity detected by sensor",
+          "unrecognized": "Shut off for an unrecognised reason"
+        }
+      },
+      "problem": {
+        "name": "Problem",
+        "state": {
+          "none": "None",
+          "valve_failure": "Valve failure",
+          "error": "Error",
+          "system_down": "System down",
+          "unknown_fault": "Unknown fault",
+          "communication_error": "Communication error",
+          "low_temp_alert": "Low temperature",
+          "ac_lost": "Mains power lost",
+          "change_battery": "Battery needs changing",
+          "updating": "Updating firmware"
+        }
+      },
+      "flow_state": {
+        "name": "Flow state",
+        "state": {
+          "valve_closed": "Valve closed",
+          "no_flow": "No flow",
+          "new_flow": "New flow",
+          "flow": "Sustained flow",
+          "percent_following": "Percent following"
+        }
+      },
+      "last_flow_change": {
+        "name": "Last flow change"
+      },
+      "home_limit": {
+        "name": "Home flow limit"
+      },
+      "away_limit": {
+        "name": "Away flow limit"
+      },
+      "bypass_duration": {
+        "name": "Bypass duration"
+      },
+      "pre_alert": {
+        "name": "Pre-alert notice"
+      },
+      "low_temp_alert": {
+        "name": "Low temperature alert threshold"
+      },
+      "low_temp_shutoff": {
+        "name": "Low temperature shutoff threshold"
+      },
+      "current_flow_limit": {
+        "name": "Active flow limit"
+      }
+    },
+    "binary_sensor": {
+      "water_flowing": {
+        "name": "Water flow detected",
+        "state": {
+          "off": "No",
+          "on": "Yes"
+        }
+      },
+      "bypass_timer": {
+        "name": "Bypass timer"
+      },
+      "low_temp_alert_enabled": {
+        "name": "Low temperature alert"
+      },
+      "low_temp_shutoff_enabled": {
+        "name": "Low temperature shutoff"
+      },
+      "away_water_off": {
+        "name": "Away turns water off"
+      }
+    },
+    "number": {
+      "flow_sensitivity": {
+        "name": "Flow sensitivity"
+      }
+    },
+    "event": {
+      "callback": {
+        "name": "Event",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "auto_shutoff": "Automatic shutoff",
+              "mode_changed": "Mode changed",
+              "valve_issue": "Valve issue",
+              "power_changed": "Power changed",
+              "low_temperature_alert": "Low temperature alert",
+              "low_temperature_alert_reminder": "Low temperature reminder",
+              "offline": "Offline",
+              "online": "Online",
+              "pre_alert": "Shutoff pending",
+              "no_flow": "No flow",
+              "software_update": "Software update",
+              "other": "Other"
+            }
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "FloLogic did not carry out the command: {error}"
+    }
+  },
+  "issues": {
+    "unofficial_entry": {
+      "title": "FloLogic entry from the unofficial integration",
+      "description": "The entry \"{title}\" was created by the unofficial FloLogic integration, which has moved to the `flologic_unofficial` domain. This integration uses FloLogic's official Web API and cannot use that entry's email and password.\n\nDelete the entry under Settings > Devices & services, then add **FloLogic (Unofficial)** to keep the app-protocol integration, **FloLogic** to use the official API, or both."
+    }
+  }
+}

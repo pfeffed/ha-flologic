@@ -1,0 +1,15 @@
+{
+  "domain": "flologic",
+  "name": "FloLogic",
+  "after_dependencies": ["cloud"],
+  "codeowners": ["@pfeffed"],
+  "config_flow": true,
+  "dependencies": ["webhook"],
+  "documentation": "https://github.com/pfeffed/ha-flologic",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/pfeffed/ha-flologic/issues",
+  "loggers": ["custom_components.flologic"],
+  "requirements": [],
+  "version": "0.5.0"
+}
