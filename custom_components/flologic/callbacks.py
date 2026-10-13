@@ -33,11 +33,14 @@ from homeassistant.helpers.network import NoURLAvailableError
 from .const import CONF_CALLBACK_URL, CONF_CLOUDHOOK, CONF_WEBHOOK_SECRET, DOMAIN
 from .coordinator import FloLogicConfigEntry
 from .vendor.pyflologic import (
+    HEADER_SIGNATURE,
+    HEADER_TIMESTAMP,
     CallbackDefinition,
     FloLogicClient,
     FloLogicError,
     FloLogicSignatureError,
     build_callback_url,
+    callback_url_candidates,
     verify_callback,
 )
 
@@ -199,6 +202,14 @@ class _Receiver:
             )
         except FloLogicSignatureError as err:
             self._warn(f"rejected a callback: {err}")
+            # None of this is secret, and it is the only way to tell which
+            # URL FloLogic actually signed if verification ever disagrees.
+            _LOGGER.debug(
+                "Rejected callback: timestamp=%s signature=%s candidates=%s",
+                request.headers.get(HEADER_TIMESTAMP),
+                request.headers.get(HEADER_SIGNATURE),
+                callback_url_candidates(self._registered_url, request.query_string),
+            )
             return web.Response(status=200)
 
         _LOGGER.debug("FloLogic callback: %s", event)
