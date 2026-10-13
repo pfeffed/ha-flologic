@@ -19,14 +19,20 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.flologic.const import DOMAIN
 from custom_components.flologic.vendor.pyflologic import (
     ControlMode,
     FloLogicCommandError,
     ValveMode,
 )
 
-from .conftest import DEVICE, VID, make_valve, set_valves, setup_integration
+from .conftest import (
+    DEVICE,
+    VID,
+    get_device,
+    make_valve,
+    set_valves,
+    setup_integration,
+)
 
 VALVE = f"valve.{DEVICE}"
 MODE = f"select.{DEVICE}_mode"
@@ -56,8 +62,7 @@ class TestDevice:
         self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
     ):
         await setup_integration(hass, config_entry)
-        device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, VID)})
-        assert device is not None
+        device = get_device(hass, config_entry)
         assert device.name == f"FloLogic {VID}"
         assert device.model == "WiFi Connect"
         assert device.serial_number == VID

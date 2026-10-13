@@ -6,7 +6,6 @@ from unittest.mock import MagicMock
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -18,7 +17,13 @@ from custom_components.flologic.vendor.pyflologic import (
     FloLogicConnectionError,
 )
 
-from .conftest import VID, make_entry, make_valve, set_valves, setup_integration
+from .conftest import (
+    get_device,
+    make_entry,
+    make_valve,
+    set_valves,
+    setup_integration,
+)
 
 
 async def test_setup_and_unload(
@@ -105,9 +110,7 @@ async def test_a_present_valves_device_cannot_be_deleted(
     hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
 ) -> None:
     await setup_integration(hass, config_entry)
-    registry = dr.async_get(hass)
-    device = registry.async_get_device(identifiers={(DOMAIN, VID)})
-    assert device is not None
+    device = get_device(hass, config_entry)
     assert not await async_remove_config_entry_device(hass, config_entry, device)
 
 
@@ -115,8 +118,7 @@ async def test_a_departed_valves_device_can_be_deleted(
     hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: MagicMock
 ) -> None:
     await setup_integration(hass, config_entry)
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, VID)})
-    assert device is not None
+    device = get_device(hass, config_entry)
     set_valves(mock_client, make_valve("93DBB1"))
     await config_entry.runtime_data.async_refresh()
     assert await async_remove_config_entry_device(hass, config_entry, device)

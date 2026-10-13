@@ -31,6 +31,9 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          # Brand assets would mean FloLogic's logo, which is theirs to grant.
+          # HACS installs custom repositories without them.
+          ignore: brands
 
   hassfest:
     runs-on: ubuntu-latest

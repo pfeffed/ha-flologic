@@ -10,6 +10,8 @@ import pytest
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.device_registry import DeviceEntry
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.flologic.const import (
@@ -111,6 +113,20 @@ def mock_client() -> Generator[MagicMock]:
 def set_valves(client: MagicMock, *valves: Valve) -> None:
     """Change what the mocked client returns on its next refresh."""
     client.valves = valves_of(*valves)
+
+
+def get_device(hass: HomeAssistant, entry: ConfigEntry, vid: str = VID) -> DeviceEntry:
+    """Return the device for a valve.
+
+    Looked up through the entry rather than ``async_get_device``, which newer
+    Home Assistant refuses because identifiers are no longer unique across
+    config entries.
+    """
+    devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
+    for device in devices:
+        if (DOMAIN, vid) in device.identifiers:
+            return device
+    raise AssertionError(f"no device for {vid}")
 
 
 async def setup_integration(hass: HomeAssistant, entry: ConfigEntry) -> None:
